@@ -26,6 +26,7 @@ import org.apache.flink.streaming.api.datastream.BroadcastStream;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.ds.flinkmv.connectors.NatsStreamSink;
 import org.ds.flinkmv.connectors.NatsStreamSource;
 import org.ds.flinkmv.counters.RawQuoteFlatMap;
 import org.ds.flinkmv.functions.*;
@@ -35,13 +36,14 @@ import org.slf4j.LoggerFactory;
 
 public class StreamingJob {
 	private static Logger LOG = LoggerFactory.getLogger(StreamingJob.class);
+	private static final String NATS_URL = "nats://localhost:4222";
 
 	public static void main(String[] args) throws Exception {
 		LOG.info("ALIVE!!!!");
 		// set up the streaming execution environment
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-		NatsStreamSource nss = new NatsStreamSource("nats://localhost:4222", "sc","quotes.>");
+		NatsStreamSource nss = new NatsStreamSource(NATS_URL, "sc","quotes.>");
 		DataStream<Tuple2<String,String>> rawQuoteStream = env.addSource(nss);
 
 
@@ -50,7 +52,7 @@ public class StreamingJob {
 				.map(new QuoteMapper());
 
 		NatsStreamSource positionsSource = new NatsStreamSource(
-				"nats://localhost:4222", "pc", "positions"
+				NATS_URL, "pc", "positions"
 		);
 		DataStream<Tuple2<String,String>> rawPositionsStream = env.addSource(positionsSource);
 
@@ -74,7 +76,11 @@ public class StreamingJob {
 						.connect(quotes)
 						.process(new QuoteEvaluator());
 
-		balanceCalcStream.print();
+		//balanceCalcStream.print();
+		balanceCalcStream
+				.map(new MarketValueMapper())
+				.addSink(new NatsStreamSink(NATS_URL,"mvupdates"));
+
 		env.execute("Flink Streaming Java API Skeleton");
 	}
 }
