@@ -23,6 +23,8 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.ds.flinkmv.connectors.NatsStreamSource;
 import org.ds.flinkmv.counters.RawQuoteFlatMap;
+import org.ds.flinkmv.functions.QuoteMapper;
+import org.ds.flinkmv.functions.QuoteStructureFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,11 +38,24 @@ public class StreamingJob {
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
 		NatsStreamSource nss = new NatsStreamSource("nats://localhost:4222", "sc","quotes.>");
-		DataStream<Tuple2<String,String>> rawsQuoteStream = env.addSource(nss);
-		rawsQuoteStream
-				.flatMap(new RawQuoteFlatMap())
-				.print();
+		DataStream<Tuple2<String,String>> rawQuoteStream = env.addSource(nss);
+		//rawsQuoteStream
+		//		.flatMap(new RawQuoteFlatMap())
+		//		.print();
 
+		rawQuoteStream
+				.filter(new QuoteStructureFilter())
+				.map(new QuoteMapper())
+				.print();
+/*
+		NatsStreamSource positionsSource = new NatsStreamSource(
+				"nats://localhost:4222", "pc", "positions"
+		);
+		DataStream<Tuple2<String,String>> rawPositionsStream = env.addSource(positionsSource);
+		rawPositionsStream.print();
+*/
 		env.execute("Flink Streaming Java API Skeleton");
 	}
 }
+
+//TODO: Is a consumer group needed for the durable subscription?
