@@ -18,15 +18,17 @@
 
 package org.ds.flinkmv.application;
 
+import org.apache.flink.api.common.state.MapStateDescriptor;
+import org.apache.flink.api.common.typeinfo.Types;
+import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.streaming.api.datastream.BroadcastStream;
 import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.ds.flinkmv.connectors.NatsStreamSource;
 import org.ds.flinkmv.counters.RawQuoteFlatMap;
-import org.ds.flinkmv.functions.QuoteMapper;
-import org.ds.flinkmv.functions.QuoteStructureFilter;
-import org.ds.flinkmv.functions.RawPositionFilterFunction;
-import org.ds.flinkmv.functions.RawPositionsMapper;
+import org.ds.flinkmv.functions.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,21 +45,36 @@ public class StreamingJob {
 		DataStream<Tuple2<String,String>> rawQuoteStream = env.addSource(nss);
 
 
-		rawQuoteStream
+		DataStream<Quote> quoteStream = rawQuoteStream
 				.filter(new QuoteStructureFilter())
-				.map(new QuoteMapper())
-				.print();
+				.map(new QuoteMapper());
 
 		NatsStreamSource positionsSource = new NatsStreamSource(
 				"nats://localhost:4222", "pc", "positions"
 		);
 		DataStream<Tuple2<String,String>> rawPositionsStream = env.addSource(positionsSource);
 
-		rawPositionsStream
+		DataStream<Position> positions = rawPositionsStream
 				.filter(new RawPositionFilterFunction())
-				.map(new RawPositionsMapper())
-				.print();
+				.map(new RawPositionsMapper());
 
+		KeyedStream<Position, String> positionsByAccount =
+				positions.keyBy((KeySelector<Position,String>) position -> position.owner);
+
+		positionsByAccount.print();
+
+		MapStateDescriptor<Void,Quote> broadcastDescriptor =
+				new MapStateDescriptor<Void, Quote>("quotes", Types.VOID,Types.POJO(Quote.class));
+
+		BroadcastStream<Quote> quotes = quoteStream.broadcast(broadcastDescriptor);
+
+		//Connect the streams
+		DataStream<MarketValue> balanceCalcStream =
+				positionsByAccount
+						.connect(quotes)
+						.process(new QuoteEvaluator());
+
+		balanceCalcStream.print();
 		env.execute("Flink Streaming Java API Skeleton");
 	}
 }
