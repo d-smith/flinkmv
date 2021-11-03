@@ -25,6 +25,8 @@ import org.ds.flinkmv.connectors.NatsStreamSource;
 import org.ds.flinkmv.counters.RawQuoteFlatMap;
 import org.ds.flinkmv.functions.QuoteMapper;
 import org.ds.flinkmv.functions.QuoteStructureFilter;
+import org.ds.flinkmv.functions.RawPositionFilterFunction;
+import org.ds.flinkmv.functions.RawPositionsMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,21 +41,23 @@ public class StreamingJob {
 
 		NatsStreamSource nss = new NatsStreamSource("nats://localhost:4222", "sc","quotes.>");
 		DataStream<Tuple2<String,String>> rawQuoteStream = env.addSource(nss);
-		//rawsQuoteStream
-		//		.flatMap(new RawQuoteFlatMap())
-		//		.print();
+
 
 		rawQuoteStream
 				.filter(new QuoteStructureFilter())
 				.map(new QuoteMapper())
 				.print();
-/*
+
 		NatsStreamSource positionsSource = new NatsStreamSource(
 				"nats://localhost:4222", "pc", "positions"
 		);
 		DataStream<Tuple2<String,String>> rawPositionsStream = env.addSource(positionsSource);
-		rawPositionsStream.print();
-*/
+
+		rawPositionsStream
+				.filter(new RawPositionFilterFunction())
+				.map(new RawPositionsMapper())
+				.print();
+
 		env.execute("Flink Streaming Java API Skeleton");
 	}
 }
