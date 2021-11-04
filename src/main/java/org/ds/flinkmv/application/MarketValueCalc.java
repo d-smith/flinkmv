@@ -28,18 +28,19 @@ import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.ds.flinkmv.connectors.NatsStreamSink;
 import org.ds.flinkmv.connectors.NatsStreamSource;
-import org.ds.flinkmv.counters.RawQuoteFlatMap;
 import org.ds.flinkmv.functions.*;
+import org.ds.flinkmv.pojos.MarketValue;
+import org.ds.flinkmv.pojos.Position;
+import org.ds.flinkmv.pojos.Quote;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-public class StreamingJob {
-	private static Logger LOG = LoggerFactory.getLogger(StreamingJob.class);
+public class MarketValueCalc {
+	private static Logger LOG = LoggerFactory.getLogger(MarketValueCalc.class);
 	private static final String NATS_URL = "nats://localhost:4222";
 
 	public static void main(String[] args) throws Exception {
-		LOG.info("ALIVE!!!!");
 		// set up the streaming execution environment
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
@@ -59,6 +60,8 @@ public class StreamingJob {
 		DataStream<Position> positions = rawPositionsStream
 				.filter(new RawPositionFilterFunction())
 				.map(new RawPositionsMapper());
+
+
 
 		KeyedStream<Position, String> positionsByAccount =
 				positions.keyBy((KeySelector<Position,String>) position -> position.owner);

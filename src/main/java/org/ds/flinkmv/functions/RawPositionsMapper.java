@@ -2,7 +2,7 @@ package org.ds.flinkmv.functions;
 
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.tuple.Tuple2;
-import org.ds.flinkmv.application.Position;
+import org.ds.flinkmv.pojos.Position;
 
 public class RawPositionsMapper implements MapFunction<Tuple2<String,String>, Position> {
 

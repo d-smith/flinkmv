@@ -1,7 +1,7 @@
 package org.ds.flinkmv.functions;
 
 import org.apache.flink.api.common.functions.MapFunction;
-import org.ds.flinkmv.application.MarketValue;
+import org.ds.flinkmv.pojos.MarketValue;
 
 public class MarketValueMapper implements MapFunction<MarketValue,String> {
     @Override

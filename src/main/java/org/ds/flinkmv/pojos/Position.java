@@ -1,4 +1,4 @@
-package org.ds.flinkmv.application;
+package org.ds.flinkmv.pojos;
 
 public class Position {
     public String owner;

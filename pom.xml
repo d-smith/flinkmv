@@ -167,7 +167,7 @@ under the License.
 							</filters>
 							<transformers>
 								<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-									<mainClass>org.ds.flinkmv.application.StreamingJob</mainClass>
+									<mainClass>org.ds.flinkmv.application.MarketValueCalc</mainClass>
 								</transformer>
 							</transformers>
 						</configuration>

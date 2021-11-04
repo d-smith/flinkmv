@@ -10,9 +10,9 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.runtime.state.KeyedStateFunction;
 import org.apache.flink.streaming.api.functions.co.KeyedBroadcastProcessFunction;
 import org.apache.flink.util.Collector;
-import org.ds.flinkmv.application.MarketValue;
-import org.ds.flinkmv.application.Position;
-import org.ds.flinkmv.application.Quote;
+import org.ds.flinkmv.pojos.MarketValue;
+import org.ds.flinkmv.pojos.Position;
+import org.ds.flinkmv.pojos.Quote;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
