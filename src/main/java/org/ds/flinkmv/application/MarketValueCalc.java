@@ -18,6 +18,7 @@
 
 package org.ds.flinkmv.application;
 
+import org.apache.flink.api.common.functions.ReduceFunction;
 import org.apache.flink.api.common.state.MapStateDescriptor;
 import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.api.java.functions.KeySelector;
@@ -26,6 +27,8 @@ import org.apache.flink.streaming.api.datastream.BroadcastStream;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.windowing.assigners.TumblingProcessingTimeWindows;
+import org.apache.flink.streaming.api.windowing.time.Time;
 import org.ds.flinkmv.connectors.NatsStreamSink;
 import org.ds.flinkmv.connectors.NatsStreamSource;
 import org.ds.flinkmv.functions.*;
@@ -71,7 +74,16 @@ public class MarketValueCalc {
 		MapStateDescriptor<Void,Quote> broadcastDescriptor =
 				new MapStateDescriptor<Void, Quote>("quotes", Types.VOID,Types.POJO(Quote.class));
 
-		BroadcastStream<Quote> quotes = quoteStream.broadcast(broadcastDescriptor);
+		BroadcastStream<Quote> quotes = quoteStream
+				.keyBy(quote -> quote.symbol)
+				.window(TumblingProcessingTimeWindows.of(Time.seconds(1)))
+				.reduce(new ReduceFunction<Quote>() {
+					@Override
+					public Quote reduce(Quote quote, Quote t1) throws Exception {
+						return t1;
+					}
+				})
+				.broadcast(broadcastDescriptor);
 
 		//Connect the streams
 		DataStream<MarketValue> balanceCalcStream =
