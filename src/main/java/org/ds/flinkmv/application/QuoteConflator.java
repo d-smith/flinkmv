@@ -22,12 +22,13 @@ public class QuoteConflator {
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
         NatsStreamSource nss = new NatsStreamSource(NATS_URL, "sc","quotes.>");
-        DataStream<Tuple2<String,String>> rawQuoteStream = env.addSource(nss);
+        DataStream<Tuple2<String,String>> rawQuoteStream = env.addSource(nss)
+                .name("raw quote stream").uid("raw quote stream");
 
 
         DataStream<Quote> quoteStream = rawQuoteStream
-                .filter(new QuoteStructureFilter())
-                .map(new QuoteMapper());
+                .filter(new QuoteStructureFilter()).name("raw quote filter").uid("raw quote filter")
+                .map(new QuoteMapper()).name("quote mapper").uid("quote mapper");
 
 
         quoteStream.keyBy(quote -> quote.symbol)
@@ -37,14 +38,14 @@ public class QuoteConflator {
                     public Quote reduce(Quote quote, Quote t1) throws Exception {
                         return t1;
                     }
-                })
+                }).name("quote reducer").uid("quote reducer")
                 .map(new MapFunction<Quote, String>() {
                     @Override
                     public String map(Quote quote) throws Exception {
                         return "windowed -> " + quote.toString();
                     }
-                })
-                .print();
+                }).name("quote to string mapper").uid("quote to string mapper")
+                .print().name("quote printer").uid("quote printer");
         env.execute();
     }
 }

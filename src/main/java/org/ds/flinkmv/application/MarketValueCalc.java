@@ -48,7 +48,8 @@ public class MarketValueCalc {
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
 		NatsStreamSource nss = new NatsStreamSource(NATS_URL, "sc","quotes.>");
-		DataStream<Tuple2<String,String>> rawQuoteStream = env.addSource(nss);
+		DataStream<Tuple2<String,String>> rawQuoteStream = env.addSource(nss)
+				.name("raw quote stream").uid("raw quote stream");
 
 
 		DataStream<Quote> quoteStream = rawQuoteStream
