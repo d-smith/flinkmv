@@ -4,11 +4,49 @@ Simple market value calculation of positions as price quotes arrive
 
 ## Set up
 
+### Nats.io Setup
+
 Run nats.io
 
 docker run -p 4222:4222 nats -js
 
 Run set up - setup.StreamSetup
+
+### Flink Setup
+
+Download flink and untar it somewhere. Set FLINK_HOME variable, add it to your path, e.g.
+
+```
+export FLINK_HOME=/some/path/tools/flink-1.11.4
+export PATH=$PATH:$FLINK_HOME/bin
+```
+
+Start the cluster
+
+start-cluster.sh
+
+Console at http://localhost:8081/#/overview
+
+
+
+### Deploy the Conflator App
+
+To run the conflator job, set the main class appropriately in the pom then build the jar.
+
+```
+<transformers>
+    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+        <mainClass>org.ds.flinkmv.application.QuoteConflator</mainClass>
+    </transformer>
+</transformers>
+```
+
+```
+mvn package
+```
+
+
+### Misc
 
 Produce quotes - producers.QuotesProducer
 
