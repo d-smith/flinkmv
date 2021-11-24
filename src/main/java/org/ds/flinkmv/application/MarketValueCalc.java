@@ -53,24 +53,25 @@ public class MarketValueCalc {
 
 
 		DataStream<Quote> quoteStream = rawQuoteStream
-				.filter(new QuoteStructureFilter())
-				.map(new QuoteMapper());
+				.filter(new QuoteStructureFilter()).uid("quote filter").name("quote filter")
+				.map(new QuoteMapper()).uid("quote pojo mapper").name("quote pojo mapper");
 
 		NatsStreamSource positionsSource = new NatsStreamSource(
 				NATS_URL, "pc", "positions"
 		);
-		DataStream<Tuple2<String,String>> rawPositionsStream = env.addSource(positionsSource);
+		DataStream<Tuple2<String,String>> rawPositionsStream =
+				env.addSource(positionsSource).uid("raw positions").name("raw positions");
 
 		DataStream<Position> positions = rawPositionsStream
-				.filter(new RawPositionFilterFunction())
-				.map(new RawPositionsMapper());
+				.filter(new RawPositionFilterFunction()).uid("positions filter").name("positions filter")
+				.map(new RawPositionsMapper()).uid("positions pojo mapper").name("positions pojo mapper");
 
 
 
 		KeyedStream<Position, String> positionsByAccount =
 				positions.keyBy((KeySelector<Position,String>) position -> position.owner);
 
-		positionsByAccount.print();
+		positionsByAccount.print().uid("positions by account printer").name("positions by account printer");
 
 		MapStateDescriptor<Void,Quote> broadcastDescriptor =
 				new MapStateDescriptor<Void, Quote>("quotes", Types.VOID,Types.POJO(Quote.class));
@@ -83,18 +84,18 @@ public class MarketValueCalc {
 					public Quote reduce(Quote quote, Quote t1) throws Exception {
 						return t1;
 					}
-				})
+				}).uid("quote reducer").name("quote reducer")
 				.broadcast(broadcastDescriptor);
 
 		//Connect the streams
 		DataStream<MarketValue> balanceCalcStream =
 				positionsByAccount
 						.connect(quotes)
-						.process(new QuoteEvaluator());
+						.process(new QuoteEvaluator()).uid("mv calc stream").name("mv calc stream");
 
 		//balanceCalcStream.print();
 		balanceCalcStream
-				.map(new MarketValueMapper())
+				.map(new MarketValueMapper()).uid("mv calc output mapper").name("mv calc output mapper")
 				.addSink(new NatsStreamSink(NATS_URL,"mvupdates"));
 
 		env.execute("Flink Streaming Java API Skeleton");

@@ -21,9 +21,17 @@ export FLINK_HOME=/some/path/tools/flink-1.11.4
 export PATH=$PATH:$FLINK_HOME/bin
 ```
 
+Configure for more task slots
+
+* edit $FLINK_HOME/lib/flink-conf.yaml
+* set taskmanager.numberOfTaskSlots to 4
+
 Start the cluster
 
+```
 start-cluster.sh
+```
+
 
 Console at http://localhost:8081/#/overview
 
@@ -45,6 +53,11 @@ To run the conflator job, set the main class appropriately in the pom then build
 mvn package
 ```
 
+Run the flink app with parallelism 4
+
+```
+flink run -p 4 target/flinkmv-1.0-SNAPSHOT.jar
+```
 
 ### Misc
 
