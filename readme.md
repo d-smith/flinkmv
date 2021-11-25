@@ -53,6 +53,22 @@ To run the conflator job, set the main class appropriately in the pom then build
 mvn package
 ```
 
+To deploy and run on Flink
+
+```
+flink run -p 4 target/flinkmv-1.0-SNAPSHOT.jar
+```
+
+### Deploy the MarketValueCacl app
+
+While we could set the mainClass in the pom as above and repackage, we can also just specify the class in the jar to run:
+
+```
+flink run -p 4 -c org.ds.flinkmv.application.MarketValueCalc target/flinkmv-1.0-SNAPSHOT.jar
+```
+
+### Run the Flink App
+
 Run the flink app with parallelism 4
 
 ```
